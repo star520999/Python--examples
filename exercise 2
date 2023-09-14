@@ -1,86 +1,119 @@
 import sqlite3
+import re
+
+with open("stephen_king_adaptations.txt", "r") as f:
+
+stephen_king_adaptations_list = f.readlines()
 
 
-def create_database_and_table():
-    conn = sqlite3.connect('stephen_king_adaptations.db')
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS stephen_king_adaptations_table (
-                      movieID INTEGER PRIMARY KEY AUTOINCREMENT,
-                      movieName TEXT,
-                      movieYear INTEGER,
-                      imdbRating REAL)''')
-    conn.commit()
-    conn.close()
+conn = sqlite3.connect("stephen_king_adaptations.db")
+
+cur = conn.cursor()
+
+cur.execute("CREATE TABLE IF NOT EXISTS stephen_kind_adaptations_table (movieID INTEGER PRIMARY KEY, movieName TEXT,  movieYear INTEGER, imdbRating REAL)")
 
 
-def insert_data_from_file_to_db(filename):
-    try:
-        with open(filename, 'r') as file:
-            data = file.readlines()
-        conn = sqlite3.connect('stephen_king_adaptations.db')
-        cursor = conn.cursor()
-        for line in data:
-            parts = line.strip().split(',')
-            if len(parts) == 4:
-                cursor.execute('INSERT INTO stephen_king_adaptations_table (movieName, movieYear, imdbRating) VALUES (?, ?, ?)',
-                               (parts[0], int(parts[1]), float(parts[3])))
-        conn.commit()
-        conn.close()
-    except FileNotFoundError:
-        print(f"The file '{filename}' was not found.")
+for line in stephen_king_adaptations_list:
+
+data = [x.strip() for x in line.split(",")]
 
 
-def search_movies():
-    conn = sqlite3.connect('stephen_king_adaptations.db')
-    cursor = conn.cursor()
-    
-    while True:
-        print("\nOptions:")
-        print("1. Search by Movie Name")
-        print("2. Search by Movie Year")
-        print("3. Search by Movie Rating")
-        print("4. STOP")
-        choice = input("Enter your choice: ")
-        
-        if choice == '1':
-            movie_name = input("Enter the movie name: ")
-            cursor.execute('SELECT * FROM stephen_king_adaptations_table WHERE movieName = ?', (movie_name,))
-            result = cursor.fetchall()
-            if result:
-                for row in result:
-                    print(f"Movie Name: {row[1]}, Year: {row[2]}, IMDb Rating: {row[3]}")
-            else:
-                print("No such movie exists in our database.")
-        
-        elif choice == '2':
-            movie_year = input("Enter the movie year: ")
-            cursor.execute('SELECT * FROM stephen_king_adaptations_table WHERE movieYear = ?', (movie_year,))
-            result = cursor.fetchall()
-            if result:
-                for row in result:
-                    print(f"Movie Name: {row[1]}, Year: {row[2]}, IMDb Rating: {row[3]}")
-            else:
-                print("No movies were found for that year in our database.")
-        
-        elif choice == '3':
-            rating_limit = input("Enter the minimum IMDb rating: ")
-            cursor.execute('SELECT * FROM stephen_king_adaptations_table WHERE imdbRating >= ?', (float(rating_limit),))
-            result = cursor.fetchall()
-            if result:
-                for row in result:
-                    print(f"Movie Name: {row[1]}, Year: {row[2]}, IMDb Rating: {row[3]}")
-            else:
-                print("No movies at or above that rating were found in the database.")
-        
-        elif choice == '4':
-            break
+data[0] = int(re.search(r'\d+', data[0]).group())
 
-        else:
-            print("Invalid choice. Please select a valid option.")
 
-    conn.close()
+cur.execute("SELECT 1 FROM stephen_kind_adaptations_table WHERE movieID = ?" , (data[0],))
+if cur.fetchone() is None:
 
-if __name__ == "__main__":
-    create_database_and_table()
-    insert_data_from_file_to_db("stephen_king_adaptations.txt")
-    search_movies()
+cur.execute("INSERT INTO stephen_kind_adaptations_table (movieID,movieName, movieYear, imdbRating) VALUES (? ,? ,? ,?) ", data)
+else:
+
+cur.execute("UPDATE stephen_kind_adaptations_table SET movieName = ? , movieYear = ? , imdbRating = ?  WHERE movieID = ?" , (data[1], data[2], data[3], data[0]))
+
+
+conn.commit()
+
+
+while True:
+print(" Please select one of the following options to search for movies in the database: ")
+print("1. Film title ")
+print("2. Film Year ")
+print("3. Movie Rating ")
+print("4. Stop ")
+
+
+choice = input(" Please enter your choice: ")
+
+
+if choice == "1":
+
+movie_name = input(" Please enter movie name: ")
+
+cur.execute("SELECT * FROM stephen_kind_adaptations_table WHERE movieName = ?" , (movie_name,))
+
+result = cur.fetchone()
+
+if result:
+print(f"{movie_name} movie details: ")
+print(f" movie ID: {result[0]}")
+print(f" Movie name: {result[1]}")
+print(f" Film year: {result[2]}")
+print(f"IMDB score: {result[3]}")
+
+else:
+print(f) "We don't have this movie in our database." )
+
+
+elif choice == "2":
+
+movie_year = input(" Please enter the movie year: ")
+
+cur.execute("SELECT * FROM stephen_kind_adaptations_table WHERE movieYear = ?" , (movie_year,))
+
+results = cur.fetchall()
+
+if results:
+print(f"{movie_year} Films released in the year: ")
+for result in results:
+print(f" movie ID: {result[0]}")
+print(f" Movie name: {result[1]}")
+print(f" Film year: {result[2]}")
+print(f"IMDB score: {result[3]}")
+print("-"*20)
+
+else:
+print(f) "There are no films released that year in our database." )
+
+
+elif choice == "3":
+
+rating_limit = input(" Please enter a rating limit (movies that are equal to or higher than this rating will be returned) : ")
+
+cur.execute("SELECT * FROM stephen_kind_adaptations_table WHERE imdbRating >= ?" , (rating_limit,))
+
+results = cur.fetchall()
+
+if results:
+print(f" Movies with a rating equal to or higher than {rating_limit} : ")
+for result in results:
+print(f" movie ID: {result[0]}")
+print(f" Movie name: {result[1]}")
+print(f" Film year: {result[2]}")
+print(f"IMDB score: {result[3]}")
+print("-"*20)
+
+else:
+print(f) "There are no movies in our database that are equal to or higher than this rating." )
+
+
+elif choice == "4":
+print(" Thank you for using our program. Goodbye!" )
+break
+
+
+else:
+print(" Invalid option. Please try again." )
+
+
+cur.close()
+
+conn.close()
