@@ -1,39 +1,48 @@
 import nltk
+import nltk
+from nltk.corpus import gutenberg
+from nltk.probability import FreqDist
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
 import matplotlib.pyplot as plt
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+# Moby Dick
+moby_dick = gutenberg.words(<melville-moby_dick.txt<)
 
-moby_dick_text = nltk.corpus.gutenberg.raw('melville-moby_dick.txt')
+# Tokenization
+tokens = [word.lower() for word in moby_dick if word.isalpha()]
 
-
-tokens = word_tokenize(moby_dick_text.lower())
-
-stop_words = set(stopwords.words('english'))
+# Stop-words filtering
+stop_words = set(stopwords.words(<english<))
 filtered_tokens = [token for token in tokens if token not in stop_words]
 
+# POS tagging
+pos_tokens = pos_tag(filtered_tokens)
 
-pos_tags = pos_tag(filtered_tokens)
+# POS frequency
+pos_freq = FreqDist(tag for (word, tag) in pos_tokens)
+common_pos = pos_freq.most_common(5)
+print("5 most common parts of speech and their counts: ", common_pos)
 
-
-pos_counts = nltk.FreqDist(tag for (_, tag) in pos_tags)
-top_pos = pos_counts.most_common(5)
-
-
+# Lemmatization
 lemmatizer = WordNetLemmatizer()
-lemmatized_tokens = [lemmatizer.lemmatize(word) for (word, tag) in pos_tags][:20]
+lemmatized_tokens = [lemmatizer.lemmatize(word) for word, tag in pos_tokens]
+lemmatized_freq = FreqDist(lemmatized_tokens)
+common_lemmatized = lemmatized_freq.most_common(20)
+print("Top 20 lemmatized tokens: ", common_lemmatized)
 
+# Plotting frequency distribution
+pos_freq.plot(30, cumulative=False)
+plt.show()
 
-pos_counts.plot()
-
-
-print("Top 5 Parts of Speech and their counts:")
-for pos, count in top_pos:
-    print(f"{pos}: {count}")
-
-print("\nLemmatized Tokens:")
-print(lemmatized_tokens)
-
-plt.show()  
+# Sentiment Analysis
+sia = SentimentIntensityAnalyzer()
+sentiments = [sia.polarity_scores(word)[<compound<] for word in lemmatized_tokens]
+average_sentiment = sum(sentiments) / len(sentiments)
+print("Average sentiment score: ", average_sentiment)
+if average_sentiment > 0.05:
+    print("The overall text sentiment is positive.")
+else:
+    print("The overall text sentiment is negative.")
